@@ -1,31 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Robotics Learning Sandbox</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Ground Control: The Importance of PID Tuning</title>
+
+    <link rel="stylesheet"
+          href="style.css">
 </head>
+
 <body>
 
     <header>
-        <h1>🤖 Robotics Learning Sandbox</h1>
-        <p>GitHub Pages Test Site</p>
+        <h1>
+            Ground Control: The Importance of PID Tuning
+        </h1>
     </header>
 
     <main>
-        <div class="panel">
-            <h2>Interactive Counter Demo</h2>
 
-            <p>Button presses: <span id="counter">0</span></p>
+    <div class="panel"></div>
 
-            <button id="incrementBtn">Increment</button>
-            <button id="resetBtn">Reset</button>
-        </div>
+    <canvas
+        id="gameCanvas"
+        width="600"
+        height="600">
+    </canvas>
 
-        <canvas id="gameCanvas" width="600" height="300"></canvas>
-    </main>
+    <div id="graphPanel"></div>
 
-    <script src="script.js"></script>
+</main>
+
+    <script src="js/config.js"></script>
+    <script src="js/state.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/physics.js"></script>
+    <script src="js/controls.js"></script>
+    <script src="js/render.js"></script>
+    <script src="js/graphs.js"></script>
+    <script src="js/main.js"></script>
+
 </body>
+
 </html>

@@ -5,61 +5,22 @@
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// =======================================
-// Create UI
-// =======================================
 
-document.querySelector(".panel").innerHTML = `
-<h2>Lunar Lander PID Challenge</h2>
+const velocityCanvas =
+    document.getElementById(
+        "velocityGraph"
+    );
 
-<label>
-    P Gain:
-    <span id="pVal">1.0</span>
-</label><br>
-<input id="pGain" type="range"
-       min="0" max="20"
-       step="0.1" value="1">
+const velocityCtx =
+    velocityCanvas.getContext("2d");
 
-<br><br>
+const altitudeCanvas =
+    document.getElementById(
+        "altitudeGraph"
+    );
 
-<label>
-    I Gain:
-    <span id="iVal">0.00</span>
-</label><br>
-<input id="iGain" type="range"
-       min="0" max="5"
-       step="0.01" value="0">
-
-<br><br>
-
-<label>
-    D Gain:
-    <span id="dVal">0.0</span>
-</label><br>
-<input id="dGain" type="range"
-       min="0" max="20"
-       step="0.1" value="0">
-
-<br><br>
-
-<button id="startBtn">Start</button>
-<button id="resetBtn">Reset</button>
-
-<hr>
-
-<p>Altitude: <span id="altitudeDisplay">0</span> m</p>
-
-<p>Velocity: <span id="velocityDisplay">0</span> m/s</p>
-
-<p>Target Velocity:
-<span id="targetVelocityDisplay">0</span> m/s</p>
-
-<p>Fuel: <span id="fuelDisplay">0</span> %</p>
-
-<p>Thrust: <span id="thrustDisplay">0</span></p>
-
-<h3 id="status">Ready</h3>
-`;
+const altitudeCtx =
+    altitudeCanvas.getContext("2d");
 
 // =======================================
 // Simulation Parameters
@@ -79,6 +40,24 @@ let running = false;
 
 let currentThrust = 0;
 
+let velocityHistory = [];
+let targetHistory = [];
+let altitudeHistory = [];
+
+const maxSamples = 250;
+
+let stars = [];
+
+for (let i = 0; i < 200; i++) {
+
+    stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: Math.random() * 2 + 1
+    });
+
+}
+
 // PID gains
 
 let kp = 1.0;
@@ -89,24 +68,160 @@ let kd = 0.0;
 // Controls
 // =======================================
 
-const pSlider = document.getElementById("pGain");
-const iSlider = document.getElementById("iGain");
-const dSlider = document.getElementById("dGain");
+function createKnob(
+    svgId,
+    min,
+    max,
+    initial,
+    decimals,
+    callback
+) {
 
-pSlider.addEventListener("input", () => {
-    kp = parseFloat(pSlider.value);
-    document.getElementById("pVal").innerText = kp.toFixed(1);
-});
+    const svg =
+        document.getElementById(svgId);
 
-iSlider.addEventListener("input", () => {
-    ki = parseFloat(iSlider.value);
-    document.getElementById("iVal").innerText = ki.toFixed(2);
-});
+    let value = initial;
 
-dSlider.addEventListener("input", () => {
-    kd = parseFloat(dSlider.value);
-    document.getElementById("dVal").innerText = kd.toFixed(1);
-});
+    const radius = 40;
+    const center = 55;
+
+    svg.innerHTML = `
+        <circle cx="${center}"
+                cy="${center}"
+                r="${radius}"
+                fill="#2d2d2d"
+                stroke="#555"
+                stroke-width="3"/>
+
+        <line id="${svgId}_pointer"
+              x1="${center}"
+              y1="${center}"
+              x2="${center}"
+              y2="20"
+              stroke="#4ade80"
+              stroke-width="4"
+              stroke-linecap="round"/>
+    `;
+
+    const pointer =
+        document.getElementById(
+            `${svgId}_pointer`
+        );
+
+    function updateVisual() {
+
+        const fraction =
+            (value - min) /
+            (max - min);
+
+        const angle =
+            -135 + fraction * 270;
+
+        const radians =
+            angle * Math.PI / 180;
+
+        const length = 30;
+
+        const x2 =
+            center +
+            Math.cos(radians) * length;
+
+        const y2 =
+            center +
+            Math.sin(radians) * length;
+
+        pointer.setAttribute("x2", x2);
+        pointer.setAttribute("y2", y2);
+
+        callback(value);
+    }
+
+    let dragging = false;
+    let lastY = 0;
+
+    svg.addEventListener("mousedown", e => {
+
+        dragging = true;
+        lastY = e.clientY;
+    });
+
+    window.addEventListener("mouseup", () => {
+
+        dragging = false;
+    });
+
+    window.addEventListener("mousemove", e => {
+
+        if (!dragging)
+            return;
+
+        const delta =
+            lastY - e.clientY;
+
+        value +=
+            delta *
+            (max - min) /
+            300;
+
+        value =
+            Math.max(min,
+            Math.min(max, value));
+
+        lastY = e.clientY;
+
+        updateVisual();
+    });
+
+    updateVisual();
+}
+
+createKnob(
+    "pKnob",
+    0,
+    20,
+    1,
+    1,
+    value => {
+        kp = value;
+
+        document
+            .getElementById("pVal")
+            .innerText =
+            value.toFixed(1);
+    }
+);
+
+createKnob(
+    "iKnob",
+    0,
+    5,
+    0,
+    2,
+    value => {
+        ki = value;
+
+        document
+            .getElementById("iVal")
+            .innerText =
+            value.toFixed(2);
+    }
+);
+
+createKnob(
+    "dKnob",
+    0,
+    20,
+    0,
+    1,
+    value => {
+        kd = value;
+
+        document
+            .getElementById("dVal")
+            .innerText =
+            value.toFixed(1);
+    }
+);
 
 document.getElementById("startBtn").addEventListener("click", () => {
     running = true;
@@ -119,145 +234,196 @@ document.getElementById("resetBtn").addEventListener("click", resetSimulation);
 // Reset
 // =======================================
 
-function resetSimulation() {
-
-    altitude = 100;
-    velocity = 0;
-
-    fuel = 100;
-
-    integral = 0;
-    previousError = 0;
-
-    currentThrust = 0;
-
-    running = false;
-
-    document.getElementById("status").innerText = "Ready";
-}
-
 resetSimulation();
 
-// =======================================
-// Target Velocity Profile
-// =======================================
 
-function getTargetVelocity() {
 
-    if (altitude > 75)
-        return 15;
-
-    if (altitude > 25)
-        return 8;
-
-    if (altitude > 10)
-        return 3;
-
-    return 1;
-}
-
-// =======================================
-// PID
-// =======================================
-
-function computePID(error) {
-
-    integral += error * dt;
-
-    const derivative =
-        (error - previousError) / dt;
-
-    previousError = error;
-
-    return (
-        kp * error +
-        ki * integral +
-        kd * derivative
-    );
-}
-
-// =======================================
-// Physics
-// =======================================
-
-function updatePhysics() {
-
-    if (!running)
-        return;
-
-    const targetVelocity =
-        getTargetVelocity();
-
-    const error =
-        targetVelocity - velocity;
-
-    let thrust =
-        computePID(error);
-
-    thrust =
-        Math.max(0, thrust);
-
-    thrust =
-        Math.min(15, thrust);
-
-    if (fuel > 0) {
-
-        fuel -= thrust * 0.03;
-
-        if (fuel < 0)
-            fuel = 0;
-
-    } else {
-
-        thrust = 0;
-    }
-
-    currentThrust = thrust;
-
-    const acceleration =
-        gravity - thrust;
-
-    velocity += acceleration * dt;
-
-    altitude -= velocity * dt;
-
-    // Landing
-
-    if (altitude <= 0) {
-
-        altitude = 0;
-
-        running = false;
-
-        currentThrust = 0;
-
-        if (velocity <= 5) {
-
-            document.getElementById("status").innerText =
-                "✅ Safe Landing";
-
-        } else {
-
-            document.getElementById("status").innerText =
-                `💥 Crash Landing (${velocity.toFixed(1)} m/s)`;
-        }
-    }
-}
 
 // =======================================
 // Drawing
 // =======================================
 
+function drawVelocityGraph() {
+
+    velocityCtx.clearRect(
+        0,
+        0,
+        velocityCanvas.width,
+        velocityCanvas.height
+    );
+
+    velocityCtx.fillStyle = "#111";
+    velocityCtx.fillRect(
+        0,
+        0,
+        velocityCanvas.width,
+        velocityCanvas.height
+    );
+
+    const scaleY = 8;
+
+    velocityCtx.strokeStyle =
+        "#00ff88";
+
+    velocityCtx.beginPath();
+
+    velocityHistory.forEach(
+        (v, i) => {
+
+            const x =
+                i *
+                velocityCanvas.width /
+                maxSamples;
+
+            const y =
+                velocityCanvas.height -
+                (v * scaleY);
+
+            if (i === 0)
+                velocityCtx.moveTo(x, y);
+            else
+                velocityCtx.lineTo(x, y);
+
+        }
+    );
+
+    velocityCtx.stroke();
+
+    velocityCtx.strokeStyle =
+        "#ffcc00";
+
+    velocityCtx.beginPath();
+
+    targetHistory.forEach(
+        (v, i) => {
+
+            const x =
+                i *
+                velocityCanvas.width /
+                maxSamples;
+
+            const y =
+                velocityCanvas.height -
+                (v * scaleY);
+
+            if (i === 0)
+                velocityCtx.moveTo(x, y);
+            else
+                velocityCtx.lineTo(x, y);
+
+        }
+    );
+
+    velocityCtx.stroke();
+}
+
+function drawAltitudeGraph() {
+
+    altitudeCtx.clearRect(
+        0,
+        0,
+        altitudeCanvas.width,
+        altitudeCanvas.height
+    );
+
+    altitudeCtx.fillStyle = "#111";
+
+    altitudeCtx.fillRect(
+        0,
+        0,
+        altitudeCanvas.width,
+        altitudeCanvas.height
+    );
+
+    altitudeCtx.strokeStyle =
+        "#66aaff";
+
+    altitudeCtx.beginPath();
+
+    altitudeHistory.forEach(
+        (a, i) => {
+
+            const x =
+                i *
+                altitudeCanvas.width /
+                maxSamples;
+
+            const y =
+                altitudeCanvas.height -
+                a;
+
+            if (i === 0)
+                altitudeCtx.moveTo(x, y);
+            else
+                altitudeCtx.lineTo(x, y);
+
+        }
+    );
+
+    altitudeCtx.stroke();
+}
+
+function drawStars() {
+
+    ctx.fillStyle = "white";
+
+    for (const star of stars) {
+
+        ctx.fillRect(
+            star.x,
+            star.y,
+            star.size,
+            star.size
+        );
+
+    }
+
+}
+
+function updateStars() {
+
+    const pixelsPerMetre = 6;
+
+    const visualScroll =
+        velocity *
+        pixelsPerMetre *
+        dt;
+
+    for (const star of stars) {
+
+        star.y -= visualScroll;
+
+        if (star.y < 0) {
+
+            star.y = canvas.height;
+
+            star.x =
+                Math.random() *
+                canvas.width;
+        }
+    }
+}
+
 function drawMoonSurface() {
 
-    ctx.fillStyle = "#787878";
+    const landerY =
+        canvas.height * 0.7;
+
+    const pixelsPerMetre = 4;
+
+    const surfaceY =
+        landerY + 50 +
+        altitude * pixelsPerMetre;
+
+    ctx.fillStyle = "#666666";
 
     ctx.fillRect(
         0,
-        canvas.height - 40,
+        surfaceY,
         canvas.width,
-        40
+        canvas.height - surfaceY
     );
+
 }
 
 function drawFuelBar() {
@@ -287,12 +453,8 @@ function drawLander() {
 
     const scale = 3;
 
-    let y =
-        canvas.height -
-        40 -
-        altitude * scale;
-
-    y = Math.max(20, y);
+    const y =
+    canvas.height * 0.7;
 
     const x =
         canvas.width / 2;
@@ -329,7 +491,7 @@ function drawLander() {
         running) {
 
         const flameLength =
-            5 + currentThrust * 2;
+            5 + Math.random() + currentThrust * 2;
 
         ctx.fillStyle = "orange";
 
@@ -342,42 +504,6 @@ function drawLander() {
     }
 }
 
-// =======================================
-// Display
-// =======================================
-
-function updateDisplay() {
-
-    document.getElementById(
-        "altitudeDisplay"
-    ).innerText =
-        altitude.toFixed(1);
-
-    document.getElementById(
-        "velocityDisplay"
-    ).innerText =
-        velocity.toFixed(2);
-
-    document.getElementById(
-        "fuelDisplay"
-    ).innerText =
-        fuel.toFixed(1);
-
-    document.getElementById(
-        "targetVelocityDisplay"
-    ).innerText =
-        getTargetVelocity().toFixed(1);
-
-    document.getElementById(
-        "thrustDisplay"
-    ).innerText =
-        currentThrust.toFixed(2);
-}
-
-// =======================================
-// Draw
-// =======================================
-
 function render() {
 
     ctx.clearRect(
@@ -387,26 +513,8 @@ function render() {
         canvas.height
     );
 
+    drawStars();
     drawMoonSurface();
     drawFuelBar();
     drawLander();
 }
-
-// =======================================
-// Main Loop
-// =======================================
-
-function animate() {
-
-    updatePhysics();
-
-    render();
-
-    updateDisplay();
-
-    requestAnimationFrame(
-        animate
-    );
-}
-
-animate();
