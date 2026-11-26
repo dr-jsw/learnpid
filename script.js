@@ -1,52 +1,44 @@
-// --------------------
-// Canvas Setup
-// --------------------
+// =======================================
+// Lunar Lander PID Velocity Challenge
+// =======================================
 
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
 
-// --------------------
-// Simulation Variables
-// --------------------
+// =======================================
+// Create UI
+// =======================================
 
-const gravity = 1.62; // Moon gravity (m/s²)
-
-let altitude;
-let velocity;
-let fuel;
-let integral;
-let previousError;
-let running;
-
-// PID values
-let kp = 1.0;
-let ki = 0.0;
-let kd = 0.0;
-
-// timing
-const dt = 0.05;
-
-// --------------------
-// Create Control Panel
-// --------------------
-
-const panel = document.querySelector(".panel");
-
-panel.innerHTML = `
+document.querySelector(".panel").innerHTML = `
 <h2>Lunar Lander PID Challenge</h2>
 
-<label>P Gain: <span id="pVal">1.0</span></label>
-<input type="range" id="pGain" min="0" max="20" step="0.1" value="1">
+<label>
+    P Gain:
+    <span id="pVal">1.0</span>
+</label><br>
+<input id="pGain" type="range"
+       min="0" max="20"
+       step="0.1" value="1">
 
 <br><br>
 
-<label>I Gain: <span id="iVal">0.0</span></label>
-<input type="range" id="iGain" min="0" max="5" step="0.05" value="0">
+<label>
+    I Gain:
+    <span id="iVal">0.00</span>
+</label><br>
+<input id="iGain" type="range"
+       min="0" max="5"
+       step="0.01" value="0">
 
 <br><br>
 
-<label>D Gain: <span id="dVal">0.0</span></label>
-<input type="range" id="dGain" min="0" max="20" step="0.1" value="0">
+<label>
+    D Gain:
+    <span id="dVal">0.0</span>
+</label><br>
+<input id="dGain" type="range"
+       min="0" max="20"
+       step="0.1" value="0">
 
 <br><br>
 
@@ -55,16 +47,47 @@ panel.innerHTML = `
 
 <hr>
 
-<p>Altitude: <span id="altitudeDisplay"></span> m</p>
-<p>Velocity: <span id="velocityDisplay"></span> m/s</p>
-<p>Fuel: <span id="fuelDisplay"></span>%</p>
+<p>Altitude: <span id="altitudeDisplay">0</span> m</p>
+
+<p>Velocity: <span id="velocityDisplay">0</span> m/s</p>
+
+<p>Target Velocity:
+<span id="targetVelocityDisplay">0</span> m/s</p>
+
+<p>Fuel: <span id="fuelDisplay">0</span> %</p>
+
+<p>Thrust: <span id="thrustDisplay">0</span></p>
 
 <h3 id="status">Ready</h3>
 `;
 
-// --------------------
+// =======================================
+// Simulation Parameters
+// =======================================
+
+const gravity = 1.62;      // Moon gravity
+const dt = 0.05;
+
+let altitude;
+let velocity;
+let fuel;
+
+let integral;
+let previousError;
+
+let running = false;
+
+let currentThrust = 0;
+
+// PID gains
+
+let kp = 1.0;
+let ki = 0.0;
+let kd = 0.0;
+
+// =======================================
 // Controls
-// --------------------
+// =======================================
 
 const pSlider = document.getElementById("pGain");
 const iSlider = document.getElementById("iGain");
@@ -87,22 +110,26 @@ dSlider.addEventListener("input", () => {
 
 document.getElementById("startBtn").addEventListener("click", () => {
     running = true;
+    document.getElementById("status").innerText = "Mission Running";
 });
 
 document.getElementById("resetBtn").addEventListener("click", resetSimulation);
 
-// --------------------
+// =======================================
 // Reset
-// --------------------
+// =======================================
 
 function resetSimulation() {
+
     altitude = 100;
     velocity = 0;
 
     fuel = 100;
 
     integral = 0;
-    previousError = altitude;
+    previousError = 0;
+
+    currentThrust = 0;
 
     running = false;
 
@@ -111,9 +138,27 @@ function resetSimulation() {
 
 resetSimulation();
 
-// --------------------
-// PID Controller
-// --------------------
+// =======================================
+// Target Velocity Profile
+// =======================================
+
+function getTargetVelocity() {
+
+    if (altitude > 75)
+        return 15;
+
+    if (altitude > 25)
+        return 8;
+
+    if (altitude > 10)
+        return 3;
+
+    return 1;
+}
+
+// =======================================
+// PID
+// =======================================
 
 function computePID(error) {
 
@@ -131,24 +176,30 @@ function computePID(error) {
     );
 }
 
-// --------------------
-// Physics Update
-// --------------------
+// =======================================
+// Physics
+// =======================================
 
 function updatePhysics() {
 
-    if (!running) return;
+    if (!running)
+        return;
 
-    const targetAltitude = 0;
+    const targetVelocity =
+        getTargetVelocity();
 
-    const error = targetAltitude - altitude;
+    const error =
+        targetVelocity - velocity;
 
-    let thrust = -computePID(error);
+    let thrust =
+        computePID(error);
 
-    thrust = Math.max(0, thrust);
-    thrust = Math.min(15, thrust);
+    thrust =
+        Math.max(0, thrust);
 
-    // Fuel usage proportional to thrust
+    thrust =
+        Math.min(15, thrust);
+
     if (fuel > 0) {
 
         fuel -= thrust * 0.03;
@@ -161,12 +212,16 @@ function updatePhysics() {
         thrust = 0;
     }
 
+    currentThrust = thrust;
+
     const acceleration =
-        thrust - gravity;
+        gravity - thrust;
 
     velocity += acceleration * dt;
 
     altitude -= velocity * dt;
+
+    // Landing
 
     if (altitude <= 0) {
 
@@ -174,30 +229,28 @@ function updatePhysics() {
 
         running = false;
 
-        if (Math.abs(velocity) <= 5) {
+        currentThrust = 0;
 
-            document.getElementById("status")
-                .innerText = "✅ Safe Landing";
+        if (velocity <= 5) {
+
+            document.getElementById("status").innerText =
+                "✅ Safe Landing";
 
         } else {
 
-            document.getElementById("status")
-                .innerText = "💥 Crash Landing";
+            document.getElementById("status").innerText =
+                `💥 Crash Landing (${velocity.toFixed(1)} m/s)`;
         }
     }
 }
 
-// --------------------
+// =======================================
 // Drawing
-// --------------------
+// =======================================
 
-function draw() {
+function drawMoonSurface() {
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Moon surface
-
-    ctx.fillStyle = "#888";
+    ctx.fillStyle = "#787878";
 
     ctx.fillRect(
         0,
@@ -205,43 +258,11 @@ function draw() {
         canvas.width,
         40
     );
+}
 
-    // altitude mapping
+function drawFuelBar() {
 
-    const y =
-        canvas.height -
-        40 -
-        (altitude * 2);
-
-    // Lander
-
-    ctx.fillStyle = "#2563eb";
-
-    ctx.fillRect(
-        canvas.width / 2 - 20,
-        y,
-        40,
-        40
-    );
-
-    // Thrust flame
-
-    if (running && fuel > 0) {
-
-        ctx.fillStyle = "orange";
-
-        ctx.fillRect(
-            canvas.width / 2 - 5,
-            y + 40,
-            10,
-            15
-        );
-    }
-
-    // Fuel Bar
-
-    ctx.fillStyle = "black";
-
+    ctx.strokeStyle = "black";
     ctx.strokeRect(20, 20, 200, 20);
 
     ctx.fillStyle =
@@ -253,37 +274,139 @@ function draw() {
         fuel * 2,
         20
     );
+
+    ctx.fillStyle = "black";
+    ctx.fillText(
+        "Fuel",
+        230,
+        35
+    );
 }
 
-// --------------------
-// Update Display
-// --------------------
+function drawLander() {
+
+    const scale = 3;
+
+    let y =
+        canvas.height -
+        40 -
+        altitude * scale;
+
+    y = Math.max(20, y);
+
+    const x =
+        canvas.width / 2;
+
+    // body
+
+    ctx.fillStyle = "#2563eb";
+
+    ctx.fillRect(
+        x - 20,
+        y,
+        40,
+        40
+    );
+
+    // legs
+
+    ctx.strokeStyle = "white";
+
+    ctx.beginPath();
+
+    ctx.moveTo(x - 15, y + 40);
+    ctx.lineTo(x - 25, y + 50);
+
+    ctx.moveTo(x + 15, y + 40);
+    ctx.lineTo(x + 25, y + 50);
+
+    ctx.stroke();
+
+    // flame
+
+    if (currentThrust > 0.1 &&
+        fuel > 0 &&
+        running) {
+
+        const flameLength =
+            5 + currentThrust * 2;
+
+        ctx.fillStyle = "orange";
+
+        ctx.fillRect(
+            x - 5,
+            y + 40,
+            10,
+            flameLength
+        );
+    }
+}
+
+// =======================================
+// Display
+// =======================================
 
 function updateDisplay() {
 
-    document.getElementById("altitudeDisplay")
-        .innerText = altitude.toFixed(1);
+    document.getElementById(
+        "altitudeDisplay"
+    ).innerText =
+        altitude.toFixed(1);
 
-    document.getElementById("velocityDisplay")
-        .innerText = velocity.toFixed(2);
+    document.getElementById(
+        "velocityDisplay"
+    ).innerText =
+        velocity.toFixed(2);
 
-    document.getElementById("fuelDisplay")
-        .innerText = fuel.toFixed(1);
+    document.getElementById(
+        "fuelDisplay"
+    ).innerText =
+        fuel.toFixed(1);
+
+    document.getElementById(
+        "targetVelocityDisplay"
+    ).innerText =
+        getTargetVelocity().toFixed(1);
+
+    document.getElementById(
+        "thrustDisplay"
+    ).innerText =
+        currentThrust.toFixed(2);
 }
 
-// --------------------
-// Main Loop
-// --------------------
+// =======================================
+// Draw
+// =======================================
 
-function loop() {
+function render() {
+
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+
+    drawMoonSurface();
+    drawFuelBar();
+    drawLander();
+}
+
+// =======================================
+// Main Loop
+// =======================================
+
+function animate() {
 
     updatePhysics();
 
-    draw();
+    render();
 
     updateDisplay();
 
-    requestAnimationFrame(loop);
+    requestAnimationFrame(
+        animate
+    );
 }
 
-loop();
+animate();
