@@ -6,15 +6,15 @@ const CONFIG = {
 
     maxThrust: 5,
 
-    fuelBurnRate: 0.05,
+    fuelBurnRate: 0.04,
 
     startAltitude: 500,
 
     startFuel: 100,
 
-    maxSamples: 250,
+    maxSamples: 1500,
 
-    touchdownLimit: 2,
+    touchdownLimit: 1,
 
     starCount: 200
 

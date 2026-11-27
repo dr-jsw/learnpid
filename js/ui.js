@@ -27,11 +27,27 @@ document.querySelector(".panel").innerHTML = `
 
 <hr>
 
+<hr>
+
+<label for="targetAltitude">
+    Target Altitude (m)
+</label>
+
+<input
+    type="number"
+    id="targetAltitude"
+    value="500"
+    min="0"
+    max="1000"
+    step="10">
+
+<hr>
+
 <div class="telemetry">
 
 <p>Altitude: <span id="altitudeDisplay">0</span> m</p>
 <p>Velocity: <span id="velocityDisplay">0</span> m/s</p>
-<p>Target Velocity: <span id="targetVelocityDisplay">0</span> m/s</p>
+<p>Target Altitude:<span id="targetAltitudeDisplay">500</span>m</p>
 <p>Fuel: <span id="fuelDisplay">0</span> %</p>
 <p>Thrust: <span id="thrustDisplay">0</span></p>
 
@@ -115,9 +131,9 @@ function updateDisplay() {
         fuel.toFixed(1);
 
     document.getElementById(
-        "targetVelocityDisplay"
+        "targetAltitudeDisplay"
     ).innerText =
-        getTargetVelocity().toFixed(1);
+        targetAltitude.toFixed(1);
 
     document.getElementById(
         "thrustDisplay"

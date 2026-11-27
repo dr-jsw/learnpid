@@ -122,6 +122,24 @@ function createKnob(
     updateVisual();
 }
 
+// Target Value
+
+document
+    .getElementById(
+        "targetAltitude"
+    )
+    .addEventListener(
+        "input",
+        e => {
+
+            targetAltitude =
+                parseFloat(
+                    e.target.value
+                );
+
+        }
+    );
+
 // =======================================
 // PID Knobs
 // =======================================
@@ -145,7 +163,7 @@ createKnob(
 createKnob(
     "iKnob",
     0,
-    5,
+    1,
     0,
     value => {
 
@@ -161,7 +179,7 @@ createKnob(
 createKnob(
     "dKnob",
     0,
-    20,
+    200,
     0,
     value => {
 

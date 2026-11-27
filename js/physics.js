@@ -10,17 +10,15 @@ function updatePhysics() {
         return;
     }
 
-    const targetVelocity =
-        getTargetVelocity();
-
     const error =
-        targetVelocity - velocity;
+        targetAltitude -
+        altitude;
 
     const hoverThrust =
         CONFIG.gravity;
 
     let thrust =
-        hoverThrust -
+        hoverThrust +
         computePID(error);
 
     thrust =
@@ -68,27 +66,6 @@ function updatePhysics() {
 }
 
 // =======================================
-// Mission Profiles
-// =======================================
-
-function getTargetVelocity() {
-
-    if (altitude > 75) {
-        return 15;
-    }
-
-    if (altitude > 25) {
-        return 8;
-    }
-
-    if (altitude > 10) {
-        return 3;
-    }
-
-    return 1;
-}
-
-// =======================================
 // PID Controller
 // =======================================
 
@@ -121,8 +98,8 @@ function recordHistory() {
         velocity
     );
 
-    targetHistory.push(
-        getTargetVelocity()
+    targetAltitudeHistory.push(
+        targetAltitude
     );
 
     altitudeHistory.push(
@@ -135,7 +112,7 @@ function recordHistory() {
     ) {
 
         velocityHistory.shift();
-        targetHistory.shift();
+        targetAltitudeHistory.shift();
         altitudeHistory.shift();
     }
 }
@@ -174,6 +151,10 @@ function handleTouchdown() {
 
     } else {
 
+        exploded = true;
+
+        createExplosion();
+
         status.innerText =
             `Crash Landing (${touchdownVelocity.toFixed(1)} m/s)`;
     }
@@ -200,9 +181,15 @@ function resetSimulation() {
 
     running = false;
 
+    exploded = false;
+    explosionParticles = [];
+    explosionRadius = 0;
+    explosionFrame = 0;
+
     velocityHistory = [];
     targetHistory = [];
     altitudeHistory = [];
+    targetAltitudeHistory = [];
 
     document.getElementById(
         "status"

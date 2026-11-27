@@ -19,7 +19,7 @@ function drawVelocityGraph() {
         TOP -
         BOTTOM;
 
-    const maxVelocity = 20;
+    const maxVelocity = 40;
 
     velocityCtx.clearRect(
         0,
@@ -94,20 +94,32 @@ function drawVelocityGraph() {
         "12px Segoe UI";
 
     velocityCtx.fillText(
-        "20 m/s",
-        5,
-        TOP + 5
+    "+40",
+    10,
+    TOP + 5
     );
 
     velocityCtx.fillText(
-        "10 m/s",
-        5,
-        TOP + plotHeight/2
+        "+20",
+        10,
+        TOP + plotHeight * 0.25
     );
 
     velocityCtx.fillText(
-        "0 m/s",
-        5,
+        "0",
+        10,
+        TOP + plotHeight * 0.50
+    );
+
+    velocityCtx.fillText(
+        "-20",
+        10,
+        TOP + plotHeight * 0.75
+    );
+
+    velocityCtx.fillText(
+        "-40",
+        10,
         TOP + plotHeight
     );
 
@@ -129,41 +141,12 @@ function drawVelocityGraph() {
                 plotWidth;
 
             const y =
-                TOP +
-                plotHeight -
-                (v/maxVelocity) *
-                plotHeight;
-
-            if(i===0)
-                velocityCtx.moveTo(x,y);
-            else
-                velocityCtx.lineTo(x,y);
-
-        }
-    );
-
-    velocityCtx.stroke();
-
-    // TARGET VELOCITY
-
-    velocityCtx.strokeStyle =
-        "#ffcc00";
-
-    velocityCtx.beginPath();
-
-    targetHistory.forEach(
-        (v,i)=>{
-
-            const x =
-                LEFT +
-                (i/CONFIG.maxSamples) *
-                plotWidth;
-
-            const y =
-                TOP +
-                plotHeight -
-                (v/maxVelocity) *
-                plotHeight;
+            TOP +
+            (   
+                (maxVelocity - v) /
+                (2 * maxVelocity)
+            )
+            * plotHeight;
 
             if(i===0)
                 velocityCtx.moveTo(x,y);
@@ -194,25 +177,6 @@ function drawVelocityGraph() {
         "Actual",
         velocityCanvas.width - 60,
         35
-    );
-
-    velocityCtx.fillStyle =
-        "#ffcc00";
-
-    velocityCtx.fillRect(
-        velocityCanvas.width - 80,
-        50,
-        12,
-        12
-    );
-
-    velocityCtx.fillStyle =
-        "#FFF";
-
-    velocityCtx.fillText(
-        "Target",
-        velocityCanvas.width - 60,
-        60
     );
 }
 
@@ -330,6 +294,8 @@ function drawAltitudeGraph() {
 
     // ALTITUDE TRACE
 
+    // ACTUAL ALTITUDE
+
     altitudeCtx.strokeStyle =
         "#66aaff";
 
@@ -338,11 +304,11 @@ function drawAltitudeGraph() {
     altitudeCtx.beginPath();
 
     altitudeHistory.forEach(
-        (a,i)=>{
+        (a, i) => {
 
             const x =
                 LEFT +
-                (i/CONFIG.maxSamples) *
+                (i / CONFIG.maxSamples) *
                 plotWidth;
 
             const y =
@@ -351,10 +317,42 @@ function drawAltitudeGraph() {
                 (a / CONFIG.startAltitude) *
                 plotHeight;
 
-            if(i===0)
-                altitudeCtx.moveTo(x,y);
+            if(i === 0)
+                altitudeCtx.moveTo(x, y);
             else
-                altitudeCtx.lineTo(x,y);
+                altitudeCtx.lineTo(x, y);
+
+        }
+    );
+
+    altitudeCtx.stroke();
+
+
+    // TARGET ALTITUDE
+
+    altitudeCtx.strokeStyle =
+        "#ffcc00";
+
+    altitudeCtx.beginPath();
+
+    targetAltitudeHistory.forEach(
+        (a, i) => {
+
+            const x =
+                LEFT +
+                (i / CONFIG.maxSamples) *
+                plotWidth;
+
+            const y =
+                TOP +
+                plotHeight -
+                (a / CONFIG.startAltitude) *
+                plotHeight;
+
+            if(i === 0)
+                altitudeCtx.moveTo(x, y);
+            else
+                altitudeCtx.lineTo(x, y);
 
         }
     );
@@ -380,5 +378,24 @@ function drawAltitudeGraph() {
         "Altitude",
         altitudeCanvas.width - 60,
         35
+    );
+
+    altitudeCtx.fillStyle =
+        "#ffcc00";
+
+    altitudeCtx.fillRect(
+        altitudeCanvas.width - 80,
+        60,
+        12,
+        12
+    );
+
+    altitudeCtx.fillStyle =
+        "#FFF";
+
+    altitudeCtx.fillText(
+        "Target",
+        altitudeCanvas.width - 60,
+        70
     );
 }

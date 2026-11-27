@@ -14,9 +14,19 @@ const ctx =
 // Vehicle State
 // =======================================
 
+let targetAltitude = 500;
 let altitude;
 let velocity;
 let fuel;
+
+// Explosion stuff
+
+let exploded = false;
+let explosionParticles = [];
+let explosionRadius = 0;
+let explosionFrame = 0;
+let screenShake = 0;
+
 
 // =======================================
 // Controller State
@@ -41,6 +51,7 @@ let currentThrust = 0;
 // Telemetry History
 // =======================================
 
+let targetAltitudeHistory = [];
 let velocityHistory = [];
 let targetHistory = [];
 let altitudeHistory = [];

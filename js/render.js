@@ -30,8 +30,16 @@ function updateStars() {
 
         if (star.y < 0) {
 
-            star.y =
-                canvas.height;
+            star.y = canvas.height;
+
+            star.x =
+                Math.random() *
+                canvas.width;
+        }
+
+        if (star.y > canvas.height) {
+
+            star.y = 0;
 
             star.x =
                 Math.random() *
@@ -39,6 +47,7 @@ function updateStars() {
         }
     }
 }
+
 
 // =======================================
 // Moon Surface
@@ -179,6 +188,162 @@ function drawLander() {
     }
 }
 
+// Make Explosion Particles
+
+function createExplosion() {
+
+    explosionParticles = [];
+
+    explosionRadius = 10;
+
+    explosionFrame = 0;
+
+    screenShake = 20;
+
+    const x = canvas.width / 2;
+    const y = canvas.height * 0.7 + 20;
+
+    for (let i = 0; i < 60; i++) {
+
+        explosionParticles.push({
+
+            x: x,
+            y: y,
+
+            vx:
+                (Math.random() - 0.5) * 12,
+
+            vy:
+                (Math.random() - 0.5) * 12,
+
+            radius:
+                Math.random() * 6 + 2,
+
+            life:
+                60 + Math.random() * 30
+
+        });
+
+    }
+}
+
+// Explosion
+
+function drawExplosion() {
+
+    const x =
+        canvas.width / 2;
+
+    const y =
+        canvas.height * 0.7 + 20;
+
+    explosionFrame++;
+
+    explosionRadius += 4;
+
+    // Flash
+
+    if (explosionFrame < 5) {
+
+        ctx.fillStyle =
+            "rgba(255,255,255,0.4)";
+
+        ctx.fillRect(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+        );
+    }
+
+    // Fireball
+
+    ctx.fillStyle =
+        "rgba(255,120,0,0.8)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        explosionRadius,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    // Hot core
+
+    ctx.fillStyle =
+        "rgba(255,255,0,0.9)";
+
+    ctx.beginPath();
+
+    ctx.arc(
+        x,
+        y,
+        explosionRadius * 0.5,
+        0,
+        Math.PI * 2
+    );
+
+    ctx.fill();
+
+    // Particles
+
+    explosionParticles.forEach(
+        particle => {
+
+            particle.x +=
+                particle.vx;
+
+            particle.y +=
+                particle.vy;
+
+            particle.vy +=
+                0.05;
+
+            particle.life--;
+
+            const alpha =
+                Math.max(
+                    0,
+                    particle.life / 90
+                );
+
+            ctx.fillStyle =
+                `rgba(255,170,0,${alpha})`;
+
+            ctx.beginPath();
+
+            ctx.arc(
+                particle.x,
+                particle.y,
+                particle.radius,
+                0,
+                Math.PI * 2
+            );
+
+            ctx.fill();
+
+        }
+    );
+
+    explosionParticles =
+        explosionParticles.filter(
+            p => p.life > 0
+        );
+
+    if (
+        explosionParticles.length === 0 &&
+        explosionFrame > 30
+    ) {
+
+        exploded = false;
+    }
+}
+
 // =======================================
 // Main Render
 // =======================================
@@ -192,11 +357,23 @@ function render() {
         canvas.height
     );
 
+    ctx.save();
+
     drawStars();
 
     drawMoonSurface();
 
     drawFuelBar();
 
-    drawLander();
+    if(exploded) {
+
+        drawExplosion();
+
+    } else {
+
+        drawLander();
+
+    }
+
+    ctx.restore();
 }
