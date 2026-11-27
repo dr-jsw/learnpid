@@ -24,7 +24,6 @@ document.querySelector(".panel").innerHTML = `
 </div>
 
 <button id="startBtn">Start</button>
-<button id="resetBtn">Reset</button>
 
 <hr>
 
@@ -45,14 +44,14 @@ document.getElementById(
     "graphPanel"
 ).innerHTML = `
 
-<h3>Control System Response</h3>
+<h2>Control System Response</h2>
 
 <h4>Velocity Response</h4>
 
 <canvas
     id="velocityGraph"
     width="400"
-    height="220">
+    height="190">
 </canvas>
 
 <h4>Altitude Profile</h4>
@@ -60,10 +59,33 @@ document.getElementById(
 <canvas
     id="altitudeGraph"
     width="400"
-    height="220">
+    height="190">
 </canvas>
 
 `;
+
+velocityCanvas =
+    document.getElementById(
+        "velocityGraph"
+    );
+
+velocityCtx =
+    velocityCanvas.getContext(
+        "2d"
+    );
+
+altitudeCanvas =
+    document.getElementById(
+        "altitudeGraph"
+    );
+
+altitudeCtx =
+    altitudeCanvas.getContext(
+        "2d"
+    );
+
+console.log("Velocity canvas:", velocityCanvas);
+console.log("Altitude canvas:", altitudeCanvas);
 
 // =======================================
 // Display

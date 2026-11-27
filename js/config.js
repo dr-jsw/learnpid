@@ -6,9 +6,9 @@ const CONFIG = {
 
     maxThrust: 5,
 
-    fuelBurnRate: 0.03,
+    fuelBurnRate: 0.05,
 
-    startAltitude: 100,
+    startAltitude: 500,
 
     startFuel: 100,
 

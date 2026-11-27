@@ -15,6 +15,10 @@ header {
 
 main {
     display: flex;
+
+    justify-content: center;
+    align-items: center;
+
     gap: 20px;
     padding: 20px;
     align-items: flex-start;
@@ -24,6 +28,9 @@ main {
     width: 420px;
     min-width: 420px;
     max-height: calc(100vh - 120px);
+
+    justify-content: center;
+    align-items: center;
 
     overflow-y: auto;
 

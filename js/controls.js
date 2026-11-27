@@ -17,7 +17,7 @@ function createKnob(
 
     let value = initial;
 
-    const radius = 40;
+    const radius = 30;
     const center = 55;
 
     svg.innerHTML = `
@@ -183,19 +183,12 @@ document
     .addEventListener(
         "click",
         () => {
-
+            initialiseStars();
+            resetSimulation();
             running = true;
-
             document
                 .getElementById("status")
                 .innerText =
                 "Mission Running";
         }
-    );
-
-document
-    .getElementById("resetBtn")
-    .addEventListener(
-        "click",
-        resetSimulation
     );
